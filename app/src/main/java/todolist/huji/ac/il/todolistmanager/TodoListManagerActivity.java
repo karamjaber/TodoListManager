@@ -1,20 +1,20 @@
 package todolist.huji.ac.il.todolistmanager;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.AdapterView;
-import android.widget.EditText;
 import android.widget.ListView;
 
+import java.util.Date;
 
 
 public class TodoListManagerActivity extends AppCompatActivity {
@@ -25,21 +25,33 @@ public class TodoListManagerActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_todo_list_manager);
-        adapter = new ListAdapter(getApplicationContext());
+        adapter = new ListAdapter(getApplicationContext(),TodoListManagerActivity.this);
         lv = (ListView) findViewById(R.id.lstTodoItems);
         lv.setAdapter(adapter);
-        final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+        final Context con = this;
         lv.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> arg0, View arg1,
                                            final int pos, long id) {
-                alertDialogBuilder.setTitle(adapter.getElement(pos));
-                alertDialogBuilder.setPositiveButton("Delete Item", new DialogInterface.OnClickListener() {
+                final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(con);
+
+                final String currTitle = adapter.getElement(pos);
+                alertDialogBuilder.setTitle(currTitle);
+                alertDialogBuilder.setNegativeButton("Delete Item", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         adapter.removeElemnt(pos);
                         lv.invalidateViews();
                     }
                 });
+                if(currTitle.toLowerCase().contains("call")) {
+                    alertDialogBuilder.setPositiveButton(adapter.getElement(pos), new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            String[] splitedStr = currTitle.split(" ");
+                            Intent intent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + splitedStr[1]));
+                            startActivity(intent);
+                        }
+                    });
+                }
                 AlertDialog alertDialog = alertDialogBuilder.create();
                 alertDialog.show();
                 return true;
@@ -65,13 +77,21 @@ public class TodoListManagerActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.menuItemAdd) {
-            EditText et = (EditText) findViewById(R.id.edtNewItem);
-            String etString =et.getText().toString();
-            if(!etString.isEmpty()) {
-                adapter.addElement(et.getText().toString());
+            Intent intent = new Intent(getApplicationContext(),AddNewTodoItemActivity.class);
+            startActivityForResult(intent,11);
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode==11 ){
+            if (resultCode ==  RESULT_OK) {
+                adapter.addElement(data.getStringExtra("title"), (Date)data.getSerializableExtra("dueDate"));
                 lv.invalidateViews();
             }
         }
-        return super.onOptionsItemSelected(item);
     }
 }
