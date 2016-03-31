@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -14,18 +15,25 @@ import android.view.MenuItem;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 
 public class TodoListManagerActivity extends AppCompatActivity {
     private ListAdapter adapter;
     private ListView lv;
-
+    private DBHelper mydb;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_todo_list_manager);
+        mydb = new DBHelper(this);
+        Cursor rs = mydb.getData();
         adapter = new ListAdapter(getApplicationContext(),TodoListManagerActivity.this);
+
+        if(rs.getCount() > 0){
+            //rs.getCount();
+            reproduceAllData(rs);}
         lv = (ListView) findViewById(R.id.lstTodoItems);
         lv.setAdapter(adapter);
         final Context con = this;
@@ -39,7 +47,9 @@ public class TodoListManagerActivity extends AppCompatActivity {
                 alertDialogBuilder.setTitle(currTitle);
                 alertDialogBuilder.setNegativeButton("Delete Item", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
+                        mydb.deleteById(adapter.getId(pos));
                         adapter.removeElemnt(pos);
+                        adapter.notifyDataSetChanged();
                         lv.invalidateViews();
                     }
                 });
@@ -60,6 +70,14 @@ public class TodoListManagerActivity extends AppCompatActivity {
         });
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+    }
+    private void reproduceAllData(Cursor rs){
+        rs.moveToFirst();
+                    String nam = rs.getString(rs.getColumnIndex("due"));
+        do {
+            String[] splitedDate = rs.getString(rs.getColumnIndex("due")).split("-");
+            adapter.addElement(rs.getString(rs.getColumnIndex("title")), new Date(Integer.parseInt(splitedDate[2]) - 1900, Integer.parseInt(splitedDate[1])-1, Integer.parseInt(splitedDate[0])),rs.getString(rs.getColumnIndex("_id")));
+        }while(rs.moveToNext());
     }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -89,7 +107,11 @@ public class TodoListManagerActivity extends AppCompatActivity {
 
         if (requestCode==11 ){
             if (resultCode ==  RESULT_OK) {
-                adapter.addElement(data.getStringExtra("title"), (Date)data.getSerializableExtra("dueDate"));
+                SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy");
+                String strDate = formatter.format((Date)data.getSerializableExtra("dueDate")).toString();
+                mydb.insertContact(data.getStringExtra("title"),strDate);
+                adapter.addElement(data.getStringExtra("title"), (Date)data.getSerializableExtra("dueDate"),mydb.getLastElement());
+                adapter.notifyDataSetChanged();
                 lv.invalidateViews();
             }
         }

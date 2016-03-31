@@ -3,7 +3,6 @@ package todolist.huji.ac.il.todolistmanager;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,12 +21,15 @@ public class ListAdapter extends BaseAdapter {
     private Context mContext;
     private ArrayList<String> titleInput;
     private ArrayList<Date> dateInput;
+    private ArrayList<String> _id;
+
     private Activity mActivity;
 
     public ListAdapter(Context mContext,Activity mActivity) {
         this.mContext = mContext;
         this.titleInput = new ArrayList<>();
         this.dateInput = new ArrayList<>();
+        this._id = new ArrayList<>();
         this.mActivity = mActivity;
     }
 
@@ -35,13 +37,15 @@ public class ListAdapter extends BaseAdapter {
     public int getCount() {
         return this.titleInput.size();
     }
-    public void addElement(String str,Date date){
+    public void addElement(String str,Date date,String _id){
         dateInput.add(date);
         titleInput.add(str);
+        this._id.add(_id);
     }
     public void removeElemnt(int idx){
         titleInput.remove(idx);
         dateInput.remove(idx);
+        this._id.remove(idx);
     }
     public String getElement(int idx){
         return titleInput.get(idx);
@@ -50,14 +54,13 @@ public class ListAdapter extends BaseAdapter {
     public Object getItem(int position) {
         return null;
     }
-
+    public String getId(int pos){
+        return _id.get(pos);
+    }
     @Override
     public long getItemId(int position) {
         return 0;
     }
-//    public String parseDate(Date date){
-//
-//    }
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         LayoutInflater inflater = mActivity.getLayoutInflater();
@@ -67,7 +70,6 @@ public class ListAdapter extends BaseAdapter {
         TextView dateView = (TextView) rowView.findViewById(R.id.txtTodoDueDate);
         SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy");
 
-        // (3) create a new String using the date format we want
         String strDate = formatter.format(dateInput.get(position));
         dateView.setText(strDate);
         Date currentDate =new Date();
